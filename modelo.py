@@ -36,7 +36,7 @@ def create_gpu(shape, pipeline):
     return gpu
 
 
-class Chansey(object):
+class Birdie(object):
 
     def __init__(self, pipeline):
         # Figuras básicas
@@ -76,16 +76,17 @@ class Chansey(object):
         eye_der.childs += [eye]
 
         # Ensamblamos el mono
-        mono = sg.SceneGraphNode('chansey')
+        mono = sg.SceneGraphNode('bird')
         mono.transform = tr.matmul([tr.scale(0.2, 0.2, 0), tr.translate(-3.0, 0, 0)])
         mono.childs += [body, leg_izq, leg_der, eye_izq, eye_der]
 
-        transform_mono = sg.SceneGraphNode('chanseyTR')
+        transform_mono = sg.SceneGraphNode('birdTR')
         transform_mono.childs += [mono]
 
         self.model = transform_mono
         self.pos = 0  # -1, 0, 1
         self.y = 0  # Variable que indica la posicion visual de chansey (-0.7, 0.7)
+        self.puntaje = 0
         self.alive = True
 
     def draw(self, pipeline):
@@ -105,8 +106,7 @@ class Chansey(object):
         self.pos ---> 0 ----> x =0
         self.pos ---> 1---->x = 0.7
         """
-        gravity = 2
-        tinicial = 0
+        gravity = 0.5
         dt *= 10
         if self.pos == 1:
             self.y += dt  # no lineal, cos(...)
@@ -126,42 +126,43 @@ class Chansey(object):
             return
         self.pos = 0
 
-    def collide(self, eggs: 'EggCreator'):
-        if not eggs.on:  # Si el jugador perdió, no detecta colisiones
+    def collide(self, pipes: 'PipeCreator'):
+        if not pipes.on:  # Si el jugador perdió, no detecta colisiones
             return
 
-        deleted_eggs = []
-        for e in eggs.eggs:
+        deleted_pipes = []
+        for e in pipes.pipes:
             if -0.45 >= e.pos_x >= -0.9 and self.pos == e.pos_y:
-                print('MUERE, GIT GUD')  # YOU D   I   E   D, GIT GUD
+                print('Juego terminado. Puntuacion final: ' + str(self.puntaje))
                 """
                 En este caso, podríamos hacer alguna pestaña de alerta al usuario,
                 cambiar el fondo por alguna textura, o algo así, en este caso lo que hicimos fue
                 cambiar el color del fondo de la app por uno rojo.
                 """
-                eggs.die()  # Básicamente cambia el color del fondo, pero podría ser algo más elaborado, obviamente
+                pipes.die()  # Básicamente cambia el color del fondo, pero podría ser algo más elaborado, obviamente
                 self.alive = False
-            elif e.pos_x < -1.25 and e.pos_y != self.pos:
-                # print('COLISIONA CON EL HUEVO')
-                deleted_eggs.append(e)
-        eggs.delete(deleted_eggs)
+            elif e.pos_x < -1.1 and e.pos_y != self.pos:
+                self.puntaje += 1
+                print('Puntuacion actual:' + str(self.puntaje))
+                deleted_pipes.append(e)
+        pipes.delete(deleted_pipes)
 
 
-class Egg(object):
+class Pipe(object):
 
     def __init__(self, pipeline):
-        gpu_egg = create_gpu(bs.createColorQuad(0.780, 0, 0.223), pipeline)
+        gpu_pipe = create_gpu(bs.createColorQuad(0.780, 0, 0.223), pipeline)
 
-        egg = sg.SceneGraphNode('egg')
-        egg.transform = tr.scale(0.1, 0.75, 1)
-        egg.childs += [gpu_egg]
+        pipe = sg.SceneGraphNode('pipe')
+        pipe.transform = tr.scale(0.1, 0.75, 1)
+        pipe.childs += [gpu_pipe]
 
-        egg_tr = sg.SceneGraphNode('eggTR')
-        egg_tr.childs += [egg]
+        pipe_tr = sg.SceneGraphNode('pipeTR')
+        pipe_tr.childs += [pipe]
 
         self.pos_y = random.choice([-1, 1])  # LOGICA
         self.pos_x = 1
-        self.model = egg_tr
+        self.model = pipe_tr
 
     def draw(self, pipeline):
         self.model.transform = tr.translate(self.pos_x, 0.7 * self.pos_y, 0)
@@ -171,36 +172,36 @@ class Egg(object):
         self.pos_x -= dt
 
 
-class EggCreator(object):
-    eggs: List['Egg']
+class PipeCreator(object):
+    pipes: List['Pipe']
 
     def __init__(self):
-        self.eggs = []
+        self.pipes = []
         self.on = True
 
     def die(self):  # DARK SOULS
         glClearColor(1, 0, 0, 1.0)  # Cambiamos a rojo
         self.on = False  # Dejamos de generar huevos, si es True es porque el jugador ya perdió
 
-    def create_egg(self, pipeline):
-        if len(self.eggs) >= 1 or not self.on:  # No puede haber un máximo de 10 huevos en pantalla
+    def create_pipe(self, pipeline):
+        if len(self.pipes) >= 1 or not self.on:  # No puede haber un máximo de 10 huevos en pantalla
             return
         if random.random() < 0.01:
-            self.eggs.append(Egg(pipeline))
+            self.pipes.append(Pipe(pipeline))
 
     def draw(self, pipeline):
-        for k in self.eggs:
+        for k in self.pipes:
             k.draw(pipeline)
 
     def update(self, dt):
-        for k in self.eggs:
+        for k in self.pipes:
             k.update(dt)
 
     def delete(self, d):
         if len(d) == 0:
             return
-        remain_eggs = []
-        for k in self.eggs:  # Recorro todos los huevos
+        remain_pipes = []
+        for k in self.pipes:  # Recorro todos los huevos
             if k not in d:  # Si no se elimina, lo añado a la lista de huevos que quedan
-                remain_eggs.append(k)
-        self.eggs = remain_eggs  # Actualizo la lista
+                remain_pipes.append(k)
+        self.pipes = remain_pipes  # Actualizo la lista

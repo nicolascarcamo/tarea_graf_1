@@ -45,11 +45,11 @@ if __name__ == '__main__':
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     # HACEMOS LOS OBJETOS
-    chansey = Chansey(pipeline)
-    eggs = EggCreator()
+    bird = Birdie(pipeline)
+    pipes = PipeCreator()
 
-    controlador.set_model(chansey)
-    controlador.set_eggs(eggs)
+    controlador.set_model(bird)
+    controlador.set_pipes(pipes)
 
     t0 = 0
     while not glfw.window_should_close(window):  # Dibujando --> 1. obtener el input
@@ -64,16 +64,16 @@ if __name__ == '__main__':
 
         # Clearing the screen in both, color and depth
         glClear(GL_COLOR_BUFFER_BIT)
-        eggs.create_egg(pipeline)  # Aleatorio
-        eggs.update(0.5 * dt)  # 0.001
-        chansey.update(0.1*dt, ti)
+        pipes.create_pipe(pipeline)  # Aleatorio
+        pipes.update(0.5 * dt)  # 0.001
+        bird.update(0.1*dt)
 
         # Reconocer la logica
-        chansey.collide(eggs)  # ---> RECORRER TODOS LOS HUEVOS
+        bird.collide(pipes)  # ---> RECORRER TODOS LOS HUEVOS
 
         # DIBUJAR LOS MODELOS
-        chansey.draw(pipeline)
-        eggs.draw(pipeline)
+        bird.draw(pipeline)
+        pipes.draw(pipeline)
 
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)
