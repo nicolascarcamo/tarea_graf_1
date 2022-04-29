@@ -6,6 +6,7 @@ las llamadas para obtener el dibujo de la escena.
 import glfw
 import sys
 from OpenGL.GL import *
+from grafica.scene_graph import drawSceneGraphNode
 
 from modelo import *
 from controlador import Controller
@@ -47,6 +48,7 @@ if __name__ == '__main__':
     # HACEMOS LOS OBJETOS
     bird = Birdie(pipeline)
     pipes = PipeCreator()
+    ground = Ground(pipeline)
 
     controlador.set_model(bird)
     controlador.set_pipes(pipes)
@@ -74,6 +76,8 @@ if __name__ == '__main__':
         # DIBUJAR LOS MODELOS
         bird.draw(pipeline)
         pipes.draw(pipeline)
+        ground.draw(pipeline)
+
 
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)

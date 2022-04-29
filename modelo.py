@@ -1,24 +1,3 @@
-"""
-Este archivo generaría todos los modelos que tiene la aplicación. En programas más complicados
-tendríamos una cosa así:
-
-src/models/actor/chansey.py
-src/models/actor/egg.py
-src/models/factory/eggcreator.py
-
-...
-Y este archivo sería algo como
-src/models/model.py --> sólo importaría los objetos que usa el resto de la aplicación, sin tocar el detalle mismo
-
-from src.models.actor.chansey import Chansey
-from src.models.actor.factory import EggCreator
-...
-
-Pero aquí, como nuestra app es sencilla, definimos todas las clases aquí mismo.
-1. Chansey
-2. Los huevos
-"""
-
 import grafica.transformations as tr
 import grafica.basic_shapes as bs
 import grafica.scene_graph as sg
@@ -132,7 +111,7 @@ class Birdie(object):
 
         deleted_pipes = []
         for e in pipes.pipes:
-            if -0.45 >= e.pos_x >= -0.9 and self.pos == e.pos_y:
+            if (-0.45 >= e.pos_x >= -0.9 and self.pos == e.pos_y) or (self.y < -0.75):
                 print('Juego terminado. Puntuacion final: ' + str(self.puntaje))
                 """
                 En este caso, podríamos hacer alguna pestaña de alerta al usuario,
@@ -146,6 +125,26 @@ class Birdie(object):
                 print('Puntuacion actual:' + str(self.puntaje))
                 deleted_pipes.append(e)
         pipes.delete(deleted_pipes)
+
+class Ground(object):
+
+    def __init__(self, pipeline):
+        gpu_ground = create_gpu(bs.createColorQuad(0.4, 0.5, 0), pipeline)
+
+        ground = sg.SceneGraphNode('ground')
+        ground.transform = tr.scale(1, 1, 0)
+        ground.childs += [gpu_ground]
+
+        ground_tr = sg.SceneGraphNode('groundTR')
+        ground_tr.childs += [ground]
+
+        self.pos_y = -1
+        self.pos_x = 0
+        self.model = ground
+
+    def draw(self, pipeline):
+        self.model.transform = tr.translate(self.pos_x, self.pos_y, 0)
+        sg.drawSceneGraphNode(self.model, pipeline, "transform")
 
 
 class Pipe(object):
@@ -184,7 +183,7 @@ class PipeCreator(object):
         self.on = False  # Dejamos de generar huevos, si es True es porque el jugador ya perdió
 
     def create_pipe(self, pipeline):
-        if len(self.pipes) >= 1 or not self.on:  # No puede haber un máximo de 10 huevos en pantalla
+        if len(self.pipes) >= 2 or not self.on:  # No puede haber un máximo de 10 huevos en pantalla
             return
         if random.random() < 0.01:
             self.pipes.append(Pipe(pipeline))
