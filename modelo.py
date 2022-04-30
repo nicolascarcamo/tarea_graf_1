@@ -75,6 +75,7 @@ class Birdie(object):
         # Transforma la geometria del modelo segun las variables internas
         # Podria ser una funcion hiper gigante
         self.model.transform = tr.translate(0, self.y, 0)
+        
 
     def update(self, dt):
         """
@@ -87,10 +88,15 @@ class Birdie(object):
         """
         gravity = 0.5
         dt *= 10
-        if self.pos == 1:
+        if self.pos == 1 and self.y <= 0.85:
             self.y += dt  # no lineal, cos(...)
-        elif self.pos == 0:
+        elif self.pos == 0 and self.y >= -0.75:
             self.y -= gravity*(dt)
+        elif self.pos == 1 and self.y >= 0.85:
+            self.y += 0
+        elif self.pos == 0 and self.y <= -0.75:
+            self.y -= 0
+
         # modificar de manera constante al modelo
         # aqui deberia llamar a tr.translate
         self.modifymodel()
@@ -111,7 +117,7 @@ class Birdie(object):
 
         deleted_pipes = []
         for e in pipes.pipes:
-            if (-0.45 >= e.pos_x >= -0.9 and self.pos == e.pos_y) or (self.y < -0.75):
+            if (-0.45 >= e.pos_x >= -0.9) and ((e.pos_y - 0.75) <= self.y <= (e.pos_y + 0.75)):
                 print('Juego terminado. Puntuacion final: ' + str(self.puntaje))
                 """
                 En este caso, podríamos hacer alguna pestaña de alerta al usuario,
@@ -120,30 +126,32 @@ class Birdie(object):
                 """
                 pipes.die()  # Básicamente cambia el color del fondo, pero podría ser algo más elaborado, obviamente
                 self.alive = False
-            elif e.pos_x < -1.1 and e.pos_y != self.pos:
+            elif e.pos_x < -1.1:
                 self.puntaje += 1
                 print('Puntuacion actual:' + str(self.puntaje))
                 deleted_pipes.append(e)
         pipes.delete(deleted_pipes)
 
+    def hasWon(self, victoryPoints):
+        if int(victoryPoints) == self.puntaje:
+            self.alive = False
+            
 class Ground(object):
 
     def __init__(self, pipeline):
         gpu_ground = create_gpu(bs.createColorQuad(0.4, 0.5, 0), pipeline)
 
         ground = sg.SceneGraphNode('ground')
-        ground.transform = tr.scale(1, 1, 0)
+        ground.transform = tr.scale(9999, 0.25, 1)
         ground.childs += [gpu_ground]
 
         ground_tr = sg.SceneGraphNode('groundTR')
         ground_tr.childs += [ground]
 
-        self.pos_y = -1
-        self.pos_x = 0
-        self.model = ground
+        self.model = ground_tr
 
     def draw(self, pipeline):
-        self.model.transform = tr.translate(self.pos_x, self.pos_y, 0)
+        self.model.transform = tr.translate(0, -1, 0)
         sg.drawSceneGraphNode(self.model, pipeline, "transform")
 
 
@@ -169,6 +177,12 @@ class Pipe(object):
 
     def update(self, dt):
         self.pos_x -= dt
+    
+    #def hasCollided(self, bird):
+     #   if  (self.pos_x - 0.05 <= bird.x <= self.pos_x) + 0.05 and (self.pos_y - 0.375 <= bird.y <= self.pos_y + 0.375):
+      #      print('Juego terminado. Puntuacion final: ' + str(self.puntaje))
+       #     pipes.die()
+
 
 
 class PipeCreator(object):
@@ -178,12 +192,12 @@ class PipeCreator(object):
         self.pipes = []
         self.on = True
 
-    def die(self):  # DARK SOULS
+    def die(self):
         glClearColor(1, 0, 0, 1.0)  # Cambiamos a rojo
-        self.on = False  # Dejamos de generar huevos, si es True es porque el jugador ya perdió
+        self.on = False  # Dejamos de generar pipes, si es True es porque el jugador ya perdió
 
     def create_pipe(self, pipeline):
-        if len(self.pipes) >= 2 or not self.on:  # No puede haber un máximo de 10 huevos en pantalla
+        if len(self.pipes) >= 3 or not self.on:  # No puede haber un máximo de 3 pipes en pantalla
             return
         if random.random() < 0.01:
             self.pipes.append(Pipe(pipeline))

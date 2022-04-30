@@ -49,6 +49,7 @@ if __name__ == '__main__':
     bird = Birdie(pipeline)
     pipes = PipeCreator()
     ground = Ground(pipeline)
+    victory = sys.argv[1]
 
     controlador.set_model(bird)
     controlador.set_pipes(pipes)
@@ -67,16 +68,21 @@ if __name__ == '__main__':
         # Clearing the screen in both, color and depth
         glClear(GL_COLOR_BUFFER_BIT)
         pipes.create_pipe(pipeline)  # Aleatorio
-        pipes.update(0.5 * dt)  # 0.001
+        pipes.update(0.6 * dt)  # 0.001
         bird.update(0.1*dt)
 
         # Reconocer la logica
         bird.collide(pipes)  # ---> RECORRER TODOS LOS HUEVOS
-
+        bird.hasWon(victory)
         # DIBUJAR LOS MODELOS
         bird.draw(pipeline)
         pipes.draw(pipeline)
         ground.draw(pipeline)
+        #print(str(bird.y))
+        
+
+
+
 
 
         # Once the render is done, buffers are swapped, showing only the complete scene.
