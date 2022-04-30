@@ -126,15 +126,20 @@ class Birdie(object):
                 """
                 pipes.die()  # Básicamente cambia el color del fondo, pero podría ser algo más elaborado, obviamente
                 self.alive = False
-            elif e.pos_x < -1.1:
+            elif e.pos_x < -1.1: #Logro pasar un obstaculo de manera exitosa
                 self.puntaje += 1
                 print('Puntuacion actual:' + str(self.puntaje))
                 deleted_pipes.append(e)
         pipes.delete(deleted_pipes)
 
-    def hasWon(self, victoryPoints):
+    def hasWon(self, victoryPoints): #Revisa si logro obtener el puntaje
         if int(victoryPoints) == self.puntaje:
+            self.win()
             self.alive = False
+    
+    def win(self):
+        glClearColor(0, 1, 0, 1.0)  # Cambiamos a verde pq gano :D
+
             
 class Ground(object):
 
@@ -177,12 +182,6 @@ class Pipe(object):
 
     def update(self, dt):
         self.pos_x -= dt
-    
-    #def hasCollided(self, bird):
-     #   if  (self.pos_x - 0.05 <= bird.x <= self.pos_x) + 0.05 and (self.pos_y - 0.375 <= bird.y <= self.pos_y + 0.375):
-      #      print('Juego terminado. Puntuacion final: ' + str(self.puntaje))
-       #     pipes.die()
-
 
 
 class PipeCreator(object):
