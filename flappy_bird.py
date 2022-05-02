@@ -55,7 +55,7 @@ if __name__ == '__main__':
     pipes = PipeCreator()
     ground = Ground(pipeline)
     victory = sys.argv[1]
-    score = Scoreboard(textPipeline)
+    score = Scoreboard(textPipeline, bird)
     controlador.set_model(bird)
     controlador.set_pipes(pipes)
 
@@ -79,6 +79,9 @@ if __name__ == '__main__':
         pipes.create_pipe(pipeline)  # Aleatorio
         pipes.update(0.6 * dt)  # 0.001
         bird.update(0.1*dt)
+        background.update(0.5*dt)
+        
+        score.update(textPipeline, bird)
 
         # Reconocer la logica
         bird.collide(pipes)  # ---> RECORRER TODOS LOS HUEVOS

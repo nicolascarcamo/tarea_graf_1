@@ -25,9 +25,9 @@ def create_gpu_background(shape, pipeline):
     thisFilePath = os.path.abspath(__file__)
     thisFolderPath = os.path.dirname(thisFilePath)
     spritesDirectory = os.path.join(thisFolderPath, "Sprites")
-    spritePath = os.path.join(spritesDirectory, "forest_background.png")
+    spritePath = os.path.join(spritesDirectory, "background_sprite.jpg")
     gpu.texture = es.textureSimpleSetup(
-    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
+    spritePath, GL_REPEAT, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
     return gpu
 
 def create_gpu_bird(shape, pipeline):
@@ -49,7 +49,7 @@ def create_gpu_ground(shape, pipeline):
     thisFilePath = os.path.abspath(__file__)
     thisFolderPath = os.path.dirname(thisFilePath)
     spritesDirectory = os.path.join(thisFolderPath, "Sprites")
-    spritePath = os.path.join(spritesDirectory, "groundBlockSprite.png")
+    spritePath = os.path.join(spritesDirectory, "grass_sprite.jpg")
     gpu.texture = es.textureSimpleSetup(
     spritePath, GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
     return gpu
@@ -61,54 +61,65 @@ def create_gpu_pipe(shape, pipeline):
     thisFilePath = os.path.abspath(__file__)
     thisFolderPath = os.path.dirname(thisFilePath)
     spritesDirectory = os.path.join(thisFolderPath, "Sprites")
-    spritePath = os.path.join(spritesDirectory, "pipe_sprite.png")
+    spritePath = os.path.join(spritesDirectory, "vine_sprite.png")
     gpu.texture = es.textureSimpleSetup(
-    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
+    spritePath, GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
     return gpu
+
+
+
 
 class Background(object):
     def __init__(self, pipeline):
-        backgroundShape = bs.createTextureQuad(1, 1)
+        backgroundShape = bs.createTextureQuad(2, 1)
         #bs.scaleVertices(backgroundShape, 100, [10, 10, 1])
         gpu_background = create_gpu_background(backgroundShape, pipeline)
         
         background = sg.SceneGraphNode('background')
-        background.transform = tr.scale(2, 2, 1)
+        background.transform = tr.scale(4, 2, 1)
         background.childs += [gpu_background]
 
         background_tr = sg.SceneGraphNode('backgroundTR')
         background_tr.childs += [background]
 
         self.model = background_tr
+        self.x_pos = 1
 
     def draw(self, pipeline):
-        self.model.transform = tr.translate(0, 0, 0)
+        self.model.transform = tr.translate(self.x_pos, 0, 0)
         sg.drawSceneGraphNode(self.model, pipeline, "transform")
+
+    def update(self, dt):
+        self.x_pos -= dt
+        if self.x_pos < -1:
+            self.x_pos = 1
 
 
 class Scoreboard(object):
-    def __init__(self, textPipeline):
+    def __init__(self, textPipeline, bird):
+        
+        self.headerText = "Puntuacion: " + str(bird.puntaje)
+        headerCharSize = 0.1
+        headerShape = tx.textToShape(self.headerText, headerCharSize, headerCharSize)
         textBitsTexture = tx.generateTextBitsTexture()
         gpuText3DTexture = tx.toOpenGLTexture(textBitsTexture)
-        headerText = "Puntuacion: "
-        headerCharSize = 0.1
-        headerCenterX = headerCharSize * len(headerText) / 2
-        headerShape = tx.textToShape(headerText, headerCharSize, headerCharSize)
         self.gpuHeader = es.GPUShape().initBuffers()
         textPipeline.setupVAO(self.gpuHeader)
         self.gpuHeader.fillBuffers(headerShape.vertices, headerShape.indices, GL_STATIC_DRAW)
         self.gpuHeader.texture = gpuText3DTexture
         self.headerTransform = tr.matmul([
-            tr.translate(-0.25, 0.9, 0),
-            #tr.rotationZ(np.pi / 2),
-        ])
+        tr.translate(-1, 0.9, 0),
+    ])
+
 
     def draw(self, textPipeline):
-        glUniform4f(glGetUniformLocation(textPipeline.shaderProgram, "fontColor"), 1, 1, 1, 0)
-        glUniform4f(glGetUniformLocation(textPipeline.shaderProgram, "backColor"), 0, 0, 0, 1)
+        glUniform4f(glGetUniformLocation(textPipeline.shaderProgram, "fontColor"), 1, 1, 1, 1)
+        glUniform4f(glGetUniformLocation(textPipeline.shaderProgram, "backColor"), 0, 0.7, 0.30, 0.5)
         glUniformMatrix4fv(glGetUniformLocation(textPipeline.shaderProgram, "transform"), 1, GL_TRUE, self.headerTransform)
         textPipeline.drawCall(self.gpuHeader)
 
+    def update(self, textPipeline, bird):
+        self.headerText = "Puntuacion: " + str(bird.puntaje)
 
 
 class Birdie(object):
@@ -207,7 +218,7 @@ class Birdie(object):
 class Ground(object):
 
     def __init__(self, pipeline):
-        gpu_ground = create_gpu_ground(bs.createTextureQuad(45, 8), pipeline)
+        gpu_ground = create_gpu_ground(bs.createTextureQuad(25, 4), pipeline)
 
         ground = sg.SceneGraphNode('ground')
         ground.transform = tr.scale(2, 0.3, 1)
@@ -226,10 +237,10 @@ class Ground(object):
 class Pipe(object):
 
     def __init__(self, pipeline):
-        gpu_pipe = create_gpu_pipe(bs.createTextureQuad(1, 1), pipeline)
+        gpu_pipe = create_gpu_pipe(bs.createTextureQuad(2, 8), pipeline)
 
         pipe = sg.SceneGraphNode('pipe')
-        pipe.transform = tr.scale(0.1, 0.75, 1)
+        pipe.transform = tr.scale(0.2, 0.75, 1)
         pipe.childs += [gpu_pipe]
 
         pipe_tr = sg.SceneGraphNode('pipeTR')
