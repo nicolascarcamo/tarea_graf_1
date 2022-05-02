@@ -3,11 +3,12 @@ Esta sería la clase vista. Contiene el ciclo de la aplicación y ensambla
 las llamadas para obtener el dibujo de la escena.
 """
 
+from turtle import back
 import glfw
 import sys
 from OpenGL.GL import *
 from grafica.scene_graph import drawSceneGraphNode
-
+import grafica.text_renderer as tx
 from modelo import *
 from controlador import Controller
 
@@ -35,9 +36,12 @@ if __name__ == '__main__':
 
     # Assembling the shader program (pipeline) with both shaders
     pipeline = es.SimpleTextureTransformShaderProgram()
+    textPipeline = tx.TextureTextRendererShaderProgram()
 
     # Telling OpenGL to use our shader program
-    glUseProgram(pipeline.shaderProgram)
+    #glUseProgram(pipeline.shaderProgram)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     # Setting up the clear screen color
     glClearColor(0.85, 0.85, 0.85, 1.0)
@@ -46,13 +50,15 @@ if __name__ == '__main__':
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     # HACEMOS LOS OBJETOS
+    background = Background(pipeline)
     bird = Birdie(pipeline)
     pipes = PipeCreator()
     ground = Ground(pipeline)
     victory = sys.argv[1]
-
+    score = Scoreboard(textPipeline)
     controlador.set_model(bird)
     controlador.set_pipes(pipes)
+
 
     t0 = 0
     while not glfw.window_should_close(window):  # Dibujando --> 1. obtener el input
@@ -65,6 +71,9 @@ if __name__ == '__main__':
         # Using GLFW to check for input events
         glfw.poll_events()  # OBTIENE EL INPUT --> CONTROLADOR --> MODELOS
 
+        glUseProgram(pipeline.shaderProgram)
+
+
         # Clearing the screen in both, color and depth
         glClear(GL_COLOR_BUFFER_BIT)
         pipes.create_pipe(pipeline)  # Aleatorio
@@ -74,10 +83,15 @@ if __name__ == '__main__':
         # Reconocer la logica
         bird.collide(pipes)  # ---> RECORRER TODOS LOS HUEVOS
         bird.hasWon(victory)
-        # DIBUJAR LOS MODELOS
+        # DIBUJAR LOS MODELOSs
+        background.draw(pipeline)        
         bird.draw(pipeline)
         pipes.draw(pipeline)
         ground.draw(pipeline)
+
+        glUseProgram(textPipeline.shaderProgram)
+        score.draw(textPipeline)
+
 
 
 

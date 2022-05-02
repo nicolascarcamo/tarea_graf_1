@@ -1,4 +1,5 @@
 import grafica.transformations as tr
+import grafica.text_renderer as tx
 import grafica.basic_shapes as bs
 import grafica.scene_graph as sg
 import grafica.easy_shaders as es
@@ -15,6 +16,18 @@ def create_gpu(shape, pipeline):
     gpu = es.GPUShape().initBuffers()
     pipeline.setupVAO(gpu)
     gpu.fillBuffers(shape.vertices, shape.indices, GL_STATIC_DRAW)
+    return gpu
+
+def create_gpu_background(shape, pipeline):
+    gpu = es.GPUShape().initBuffers()
+    pipeline.setupVAO(gpu)
+    gpu.fillBuffers(shape.vertices, shape.indices, GL_STATIC_DRAW)
+    thisFilePath = os.path.abspath(__file__)
+    thisFolderPath = os.path.dirname(thisFilePath)
+    spritesDirectory = os.path.join(thisFolderPath, "Sprites")
+    spritePath = os.path.join(spritesDirectory, "forest_background.png")
+    gpu.texture = es.textureSimpleSetup(
+    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
     return gpu
 
 def create_gpu_bird(shape, pipeline):
@@ -36,9 +49,9 @@ def create_gpu_ground(shape, pipeline):
     thisFilePath = os.path.abspath(__file__)
     thisFolderPath = os.path.dirname(thisFilePath)
     spritesDirectory = os.path.join(thisFolderPath, "Sprites")
-    spritePath = os.path.join(spritesDirectory, "pidgey_sprite.png")
+    spritePath = os.path.join(spritesDirectory, "groundBlockSprite.png")
     gpu.texture = es.textureSimpleSetup(
-    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
+    spritePath, GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
     return gpu
 
 def create_gpu_pipe(shape, pipeline):
@@ -53,11 +66,56 @@ def create_gpu_pipe(shape, pipeline):
     spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
     return gpu
 
+class Background(object):
+    def __init__(self, pipeline):
+        backgroundShape = bs.createTextureQuad(1, 1)
+        #bs.scaleVertices(backgroundShape, 100, [10, 10, 1])
+        gpu_background = create_gpu_background(backgroundShape, pipeline)
+        
+        background = sg.SceneGraphNode('background')
+        background.transform = tr.scale(2, 2, 1)
+        background.childs += [gpu_background]
+
+        background_tr = sg.SceneGraphNode('backgroundTR')
+        background_tr.childs += [background]
+
+        self.model = background_tr
+
+    def draw(self, pipeline):
+        self.model.transform = tr.translate(0, 0, 0)
+        sg.drawSceneGraphNode(self.model, pipeline, "transform")
+
+
+class Scoreboard(object):
+    def __init__(self, textPipeline):
+        textBitsTexture = tx.generateTextBitsTexture()
+        gpuText3DTexture = tx.toOpenGLTexture(textBitsTexture)
+        headerText = "Puntuacion: "
+        headerCharSize = 0.1
+        headerCenterX = headerCharSize * len(headerText) / 2
+        headerShape = tx.textToShape(headerText, headerCharSize, headerCharSize)
+        self.gpuHeader = es.GPUShape().initBuffers()
+        textPipeline.setupVAO(self.gpuHeader)
+        self.gpuHeader.fillBuffers(headerShape.vertices, headerShape.indices, GL_STATIC_DRAW)
+        self.gpuHeader.texture = gpuText3DTexture
+        self.headerTransform = tr.matmul([
+            tr.translate(-0.25, 0.9, 0),
+            #tr.rotationZ(np.pi / 2),
+        ])
+
+    def draw(self, textPipeline):
+        glUniform4f(glGetUniformLocation(textPipeline.shaderProgram, "fontColor"), 1, 1, 1, 0)
+        glUniform4f(glGetUniformLocation(textPipeline.shaderProgram, "backColor"), 0, 0, 0, 1)
+        glUniformMatrix4fv(glGetUniformLocation(textPipeline.shaderProgram, "transform"), 1, GL_TRUE, self.headerTransform)
+        textPipeline.drawCall(self.gpuHeader)
+
+
+
 class Birdie(object):
 
     def __init__(self, pipeline):
         # Figuras básicas
-        gpu_body_quad = create_gpu_bird(bs.createTextureQuad(1, 1), pipeline)  # rosado
+        gpu_body_quad = create_gpu_bird(bs.createTextureQuad(1, 1), pipeline)
 
         body = sg.SceneGraphNode('body')
         body.transform = tr.uniformScale(1)
@@ -91,11 +149,11 @@ class Birdie(object):
 
         gravity = 0.5
         dt *= 10
-        if self.pos == 1 and self.y <= 0.85:
+        if self.pos == 1 and self.y <= 0.9:
             self.y += dt  # no lineal, cos(...)
         elif self.pos == 0 and self.y >= -0.75:
             self.y -= gravity*(dt)
-        elif self.pos == 1 and self.y >= 0.85:
+        elif self.pos == 1 and self.y >= 0.9:
             self.y += 0
         elif self.pos == 0 and self.y <= -0.75:
             self.y -= 0
@@ -149,10 +207,10 @@ class Birdie(object):
 class Ground(object):
 
     def __init__(self, pipeline):
-        gpu_ground = create_gpu_ground(bs.createTextureQuad(1, 1), pipeline)
+        gpu_ground = create_gpu_ground(bs.createTextureQuad(45, 8), pipeline)
 
         ground = sg.SceneGraphNode('ground')
-        ground.transform = tr.scale(9999, 0.25, 1)
+        ground.transform = tr.scale(2, 0.3, 1)
         ground.childs += [gpu_ground]
 
         ground_tr = sg.SceneGraphNode('groundTR')
