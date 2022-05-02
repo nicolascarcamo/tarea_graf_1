@@ -66,6 +66,29 @@ def create_gpu_pipe(shape, pipeline):
     spritePath, GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
     return gpu
 
+def create_gpu_defeat(shape, pipeline):
+    gpu = es.GPUShape().initBuffers()
+    pipeline.setupVAO(gpu)
+    gpu.fillBuffers(shape.vertices, shape.indices, GL_STATIC_DRAW)
+    thisFilePath = os.path.abspath(__file__)
+    thisFolderPath = os.path.dirname(thisFilePath)
+    spritesDirectory = os.path.join(thisFolderPath, "Sprites")
+    spritePath = os.path.join(spritesDirectory, "youlose.png")
+    gpu.texture = es.textureSimpleSetup(
+    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
+    return gpu
+
+def create_gpu_victory(shape, pipeline):
+    gpu = es.GPUShape().initBuffers()
+    pipeline.setupVAO(gpu)
+    gpu.fillBuffers(shape.vertices, shape.indices, GL_STATIC_DRAW)
+    thisFilePath = os.path.abspath(__file__)
+    thisFolderPath = os.path.dirname(thisFilePath)
+    spritesDirectory = os.path.join(thisFolderPath, "Sprites")
+    spritePath = os.path.join(spritesDirectory, "youwin2.png")
+    gpu.texture = es.textureSimpleSetup(
+    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
+    return gpu
 
 
 
@@ -122,8 +145,8 @@ class Scoreboard(object):
         glUniformMatrix4fv(glGetUniformLocation(textPipeline.shaderProgram, "transform"), 1, GL_TRUE, self.headerTransform)
         textPipeline.drawCall(self.gpuHeader)
 
-    def update(self, pipes: 'PipeCreator', victorypoints):
-        if(self.puntaje < int(victorypoints)):
+    def update(self, pipes: 'PipeCreator', bird):
+        if(bird.alive):
             for e in pipes.pipes:
                 if e.pos_x < -1.1: #Logro pasar un obstaculo de manera exitosa
                     self.puntaje += 1
@@ -153,6 +176,7 @@ class Birdie(object):
         self.y = 0  # Variable que indica la posicion visual del pajaro
         self.puntaje = 0
         self.alive = True
+        self.win = False
 
 
     def draw(self, pipeline):
@@ -191,7 +215,7 @@ class Birdie(object):
             return
         self.pos = 0
 
-    def collide(self, pipes: 'PipeCreator'):
+    def collide(self, pipeline, pipes: 'PipeCreator'):
         if not pipes.on:  # Si el jugador perdió, no detecta colisiones
             return
 
@@ -199,12 +223,10 @@ class Birdie(object):
 
         deleted_pipes = []
         for e in pipes.pipes:
-            if (-0.45 >= e.pos_x >= -0.9) and ((e.pos_y - 0.75) <= self.y <= (e.pos_y + 0.75)):
-                print('Juego terminado. Puntuacion final: ' + str(self.puntaje))
-
+            if (-0.45 >= e.pos_x >= -0.9) and ((e.pos_y - 0.75) <= self.y <= (e.pos_y + 0.75) and self.alive):
                 pipes.die()  # Básicamente cambia el color del fondo, pero podría ser algo más elaborado, obviamente
                 self.alive = False
-            elif self.y <= -0.75: #Choca contra el suelo
+            elif self.y <= -0.75 and self.alive: #Choca contra el suelo
                 pipes.die()
                 self.alive = False
 
@@ -216,12 +238,9 @@ class Birdie(object):
 
     def hasWon(self, victoryPoints): #Revisa si logro obtener el puntaje
         if int(victoryPoints) == self.puntaje:
-            self.win()
+            self.win = True
             self.alive = False
     
-    def win(self):
-        glClearColor(0, 1, 0, 1.0)  # Cambiamos a verde pq gano :D
-
       
 class Ground(object):
 
@@ -274,8 +293,8 @@ class PipeCreator(object):
         self.on = True
 
     def die(self):
-        glClearColor(1, 0, 0, 1.0)  # Cambiamos a rojo
         self.on = False  # Dejamos de generar pipes, si es True es porque el jugador ya perdió
+
 
     def create_pipe(self, pipeline):
         if len(self.pipes) >= 3 or not self.on:  # No puede haber un máximo de 3 pipes en pantalla
@@ -299,3 +318,37 @@ class PipeCreator(object):
             if k not in d:  # Si no se elimina, lo añado a la lista de huevos que quedan
                 remain_pipes.append(k)
         self.pipes = remain_pipes  # Actualizo la lista
+
+class DefeatScreen(object):
+    def __init__(self, pipeline):
+        gpu_defeat = create_gpu_defeat(bs.createTextureQuad(1, 1), pipeline)
+        defeat = sg.SceneGraphNode('defeat')
+        defeat.transform = tr.scale(2, 1, 1)
+        defeat.childs += [gpu_defeat]
+
+        defeat_tr = sg.SceneGraphNode('groundTR')
+        defeat_tr.childs += [defeat]
+
+        self.model = defeat_tr
+
+    def draw(self, pipeline, pipecreator):
+        if not(pipecreator.on):
+            self.model.transform = tr.translate(-0.05, 0, 0)
+            sg.drawSceneGraphNode(self.model, pipeline, "transform")
+
+class VictoryScreen(object):
+    def __init__(self, pipeline):
+        gpu_victory = create_gpu_victory(bs.createTextureQuad(1, 1), pipeline)
+        victory = sg.SceneGraphNode('victory')
+        victory.transform = tr.scale(1.7, 1, 1)
+        victory.childs += [gpu_victory]
+
+        victory_tr = sg.SceneGraphNode('groundTR')
+        victory_tr.childs += [victory]
+
+        self.model = victory_tr
+
+    def draw(self, pipeline, bird):
+        if bird.win:
+            self.model.transform = tr.translate(0, 0, 0)
+            sg.drawSceneGraphNode(self.model, pipeline, "transform")

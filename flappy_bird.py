@@ -56,6 +56,9 @@ if __name__ == '__main__':
     ground = Ground(pipeline)
     victory = sys.argv[1]
     score = Scoreboard(textPipeline, bird)
+    defeatscreen = DefeatScreen(pipeline)
+    victoryscreen = VictoryScreen(pipeline)
+
     controlador.set_model(bird)
     controlador.set_pipes(pipes)
 
@@ -80,20 +83,26 @@ if __name__ == '__main__':
         pipes.update(0.6 * dt)  # 0.001
         bird.update(0.1*dt)
         background.update(0.5*dt)
-        score.update(pipes, victory)
+        score.update(pipes, bird)
         
 
         # Reconocer la logica
-        bird.collide(pipes)  # ---> RECORRER TODOS LOS HUEVOS
+        bird.collide(pipeline, pipes)  # ---> RECORRER TODOS LOS HUEVOS
         bird.hasWon(victory)
-        # DIBUJAR LOS MODELOSs
+
+        # DIBUJAR LOS MODELOS
+
         background.draw(pipeline)        
         bird.draw(pipeline)
         pipes.draw(pipeline)
         ground.draw(pipeline)
+        defeatscreen.draw(pipeline, pipes)
+        victoryscreen.draw(pipeline, bird)
+
+
 
         glUseProgram(textPipeline.shaderProgram)
-        
+
         score.draw(textPipeline)
 
 
