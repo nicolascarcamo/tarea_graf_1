@@ -80,8 +80,8 @@ if __name__ == '__main__':
         pipes.update(0.6 * dt)  # 0.001
         bird.update(0.1*dt)
         background.update(0.5*dt)
+        score.update(pipes, victory)
         
-        score.update(textPipeline, bird)
 
         # Reconocer la logica
         bird.collide(pipes)  # ---> RECORRER TODOS LOS HUEVOS
@@ -93,6 +93,7 @@ if __name__ == '__main__':
         ground.draw(pipeline)
 
         glUseProgram(textPipeline.shaderProgram)
+        
         score.draw(textPipeline)
 
 

@@ -98,7 +98,8 @@ class Background(object):
 class Scoreboard(object):
     def __init__(self, textPipeline, bird):
         
-        self.headerText = "Puntuacion: " + str(bird.puntaje)
+        self.puntaje = 0
+        self.headerText = "Puntuacion: " + str(self.puntaje)
         headerCharSize = 0.1
         headerShape = tx.textToShape(self.headerText, headerCharSize, headerCharSize)
         textBitsTexture = tx.generateTextBitsTexture()
@@ -113,13 +114,20 @@ class Scoreboard(object):
 
 
     def draw(self, textPipeline):
+        self.headerText = "Puntuacion: " + str(self.puntaje)
+        headerShape = tx.textToShape(self.headerText, 0.1, 0.1)
+        self.gpuHeader.fillBuffers(headerShape.vertices, headerShape.indices, GL_STATIC_DRAW)
         glUniform4f(glGetUniformLocation(textPipeline.shaderProgram, "fontColor"), 1, 1, 1, 1)
         glUniform4f(glGetUniformLocation(textPipeline.shaderProgram, "backColor"), 0, 0.7, 0.30, 0.5)
         glUniformMatrix4fv(glGetUniformLocation(textPipeline.shaderProgram, "transform"), 1, GL_TRUE, self.headerTransform)
         textPipeline.drawCall(self.gpuHeader)
 
-    def update(self, textPipeline, bird):
-        self.headerText = "Puntuacion: " + str(bird.puntaje)
+    def update(self, pipes: 'PipeCreator', victorypoints):
+        if(self.puntaje < int(victorypoints)):
+            for e in pipes.pipes:
+                if e.pos_x < -1.1: #Logro pasar un obstaculo de manera exitosa
+                    self.puntaje += 1
+
 
 
 class Birdie(object):
