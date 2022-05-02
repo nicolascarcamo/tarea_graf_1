@@ -95,7 +95,6 @@ def create_gpu_victory(shape, pipeline):
 class Background(object):
     def __init__(self, pipeline):
         backgroundShape = bs.createTextureQuad(2, 1)
-        #bs.scaleVertices(backgroundShape, 100, [10, 10, 1])
         gpu_background = create_gpu_background(backgroundShape, pipeline)
         
         background = sg.SceneGraphNode('background')
@@ -149,7 +148,9 @@ class Scoreboard(object):
         if(bird.alive):
             for e in pipes.pipes:
                 if e.pos_x < -1.1: #Logro pasar un obstaculo de manera exitosa
-                    self.puntaje += 1
+                    self.puntaje += 0.5
+            self.puntaje = int(self.puntaje)
+
 
 
 
@@ -222,8 +223,8 @@ class Birdie(object):
 
         deleted_pipes = []
         for e in pipes.pipes:
-            if (-0.45 >= e.pos_x >= -0.9) and ((e.pos_y - 0.75) <= self.y <= (e.pos_y + 0.75) and self.alive):
-                pipes.die()  # Básicamente cambia el color del fondo, pero podría ser algo más elaborado, obviamente
+            if ((-0.45 >= e.pos_x >= -0.9) and e.pos_y + 0.05 + (e.height/2) >= self.y >= e.pos_y - (e.height/2) - 0.05 and self.alive):
+                pipes.die() 
                 self.alive = False
                 self.defeat = True
             elif self.y <= -0.75 and self.alive: #Choca contra el suelo
@@ -232,7 +233,7 @@ class Birdie(object):
                 self.defeat = True
 
             elif e.pos_x < -1.1: #Logro pasar un obstaculo de manera exitosa
-                self.puntaje += 1
+                self.puntaje += 0.5
                 deleted_pipes.append(e)
         pipes.delete(deleted_pipes)
 
@@ -264,22 +265,25 @@ class Ground(object):
 
 class Pipe(object):
 
-    def __init__(self, pipeline):
+    def __init__(self, pipeline, y, height):
         gpu_pipe = create_gpu_pipe(bs.createTextureQuad(2, 8), pipeline)
 
+        self.height = height
+
         pipe = sg.SceneGraphNode('pipe')
-        pipe.transform = tr.scale(0.2, 0.75, 1)
+        pipe.transform = tr.scale(0.2, self.height, 1)
         pipe.childs += [gpu_pipe]
 
         pipe_tr = sg.SceneGraphNode('pipeTR')
         pipe_tr.childs += [pipe]
 
-        self.pos_y = random.choice([-1, 1])  # LOGICA
+
+        self.pos_y = y  # LOGICA
         self.pos_x = 1
         self.model = pipe_tr
 
     def draw(self, pipeline):
-        self.model.transform = tr.translate(self.pos_x, 0.7 * self.pos_y, 0)
+        self.model.transform = tr.translate(self.pos_x, self.pos_y, 0)
         sg.drawSceneGraphNode(self.model, pipeline, "transform")
 
     def update(self, dt):
@@ -292,35 +296,43 @@ class PipeCreator(object):
     def __init__(self):
         self.pipes = []
         self.on = True
+        self.lag = True
 
     def die(self):
-        self.on = False  # Dejamos de generar pipes, si es True es porque el jugador ya perdió
+        self.on = False  # Dejamos de generar pipes, si es False es porque el juego termino
 
 
     def create_pipe(self, pipeline):
-        if len(self.pipes) >= 3 or not self.on:  # No puede haber un máximo de 3 pipes en pantalla
+        if len(self.pipes) >= 6 or not self.on or not self.lag:  # No puede haber un máximo de 3 pipes en pantalla
             return
         if random.random() < 0.01:
-            self.pipes.append(Pipe(pipeline))
-
+            rand_height = random.random() + random.choice([0, 2])
+            self.pipes.append(Pipe(pipeline, 1, rand_height))
+            self.pipes.append(Pipe(pipeline, -1, abs(3.2 - rand_height)))
+        #0.3 de espacio para q pueda pasar
     def draw(self, pipeline):
         for k in self.pipes:
             k.draw(pipeline)
 
     def update(self, dt):
         for k in self.pipes:
-            k.update(dt)
+
+            if k.pos_x >= 0.1:
+                self.lag = False
+            else:
+              self.lag = True
+            k.update(dt)             
 
     def delete(self, d):
         if len(d) == 0:
             return
         remain_pipes = []
-        for k in self.pipes:  # Recorro todos los huevos
-            if k not in d:  # Si no se elimina, lo añado a la lista de huevos que quedan
+        for k in self.pipes:  # Recorro todos los obstacilos
+            if k not in d:  # Si no se elimina, lo añado a la lista de obstaculos que quedan
                 remain_pipes.append(k)
         self.pipes = remain_pipes  # Actualizo la lista
 
-class DefeatScreen(object):
+class DefeatScreen(object): #Pantalla de derrota
     def __init__(self, pipeline):
         gpu_defeat = create_gpu_defeat(bs.createTextureQuad(1, 1), pipeline)
         defeat = sg.SceneGraphNode('defeat')
@@ -332,12 +344,12 @@ class DefeatScreen(object):
 
         self.model = defeat_tr
 
-    def draw(self, pipeline, bird):
+    def draw(self, pipeline, bird): #Se dibuja solo si perdemos
         if bird.defeat:
             self.model.transform = tr.translate(-0.05, 0, 0)
             sg.drawSceneGraphNode(self.model, pipeline, "transform")
 
-class VictoryScreen(object):
+class VictoryScreen(object): #Pantalla de victoria
     def __init__(self, pipeline):
         gpu_victory = create_gpu_victory(bs.createTextureQuad(1, 1), pipeline)
         victory = sg.SceneGraphNode('victory')
@@ -350,6 +362,6 @@ class VictoryScreen(object):
         self.model = victory_tr
 
     def draw(self, pipeline, bird):
-        if bird.win:
+        if bird.win: #Se dibuja solo si ganamos
             self.model.transform = tr.translate(0, 0, 0)
             sg.drawSceneGraphNode(self.model, pipeline, "transform")

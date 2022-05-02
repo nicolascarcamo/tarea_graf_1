@@ -1,7 +1,3 @@
-"""
-Esta sería la clase vista. Contiene el ciclo de la aplicación y ensambla
-las llamadas para obtener el dibujo de la escena.
-"""
 
 from turtle import back
 import glfw
@@ -62,7 +58,6 @@ if __name__ == '__main__':
     controlador.set_model(bird)
     controlador.set_pipes(pipes)
 
-
     t0 = 0
     while not glfw.window_should_close(window):  # Dibujando --> 1. obtener el input
 
@@ -76,18 +71,16 @@ if __name__ == '__main__':
 
         glUseProgram(pipeline.shaderProgram)
 
-
         # Clearing the screen in both, color and depth
         glClear(GL_COLOR_BUFFER_BIT)
         pipes.create_pipe(pipeline)  # Aleatorio
-        pipes.update(0.6 * dt)  # 0.001
+        pipes.update(0.6 * dt)  
         bird.update(0.1*dt)
         background.update(0.5*dt)
         score.update(pipes, bird)
         
-
         # Reconocer la logica
-        bird.collide(pipes)  # ---> RECORRER TODOS LOS HUEVOS
+        bird.collide(pipes)  
         bird.hasWon(victory, pipes)
 
         # DIBUJAR LOS MODELOS
@@ -99,17 +92,9 @@ if __name__ == '__main__':
         defeatscreen.draw(pipeline, bird)
         victoryscreen.draw(pipeline, bird)
 
-
-
         glUseProgram(textPipeline.shaderProgram)
 
         score.draw(textPipeline)
-
-
-
-
-
-
 
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)
