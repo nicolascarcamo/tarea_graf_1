@@ -192,10 +192,10 @@ class Birdie(object):
 
     def update(self, dt):
 
-        gravity = 0.5
+        gravity = 0.9
         dt *= 10
         if self.pos == 1 and self.y <= 0.9:
-            self.y += dt  # no lineal, cos(...)
+            self.y += dt*1.2  # no lineal, cos(...)
         elif self.pos == 0 and self.y >= -0.75:
             self.y -= gravity*(dt)
         elif self.pos == 1 and self.y >= 0.9:
@@ -223,7 +223,7 @@ class Birdie(object):
 
         deleted_pipes = []
         for e in pipes.pipes:
-            if ((-0.45 >= e.pos_x >= -0.9) and e.pos_y + 0.05 + (e.height/2) >= self.y >= e.pos_y - (e.height/2) - 0.05 and self.alive):
+            if ((-0.45 >= e.pos_x >= -0.8) and e.pos_y + 0.05 + (e.height/2) >= self.y >= e.pos_y - (e.height/2) - 0.05 and self.alive):
                 pipes.die() 
                 self.alive = False
                 self.defeat = True
@@ -317,7 +317,7 @@ class PipeCreator(object):
     def update(self, dt):
         for k in self.pipes:
 
-            if k.pos_x >= 0.1:
+            if k.pos_x >= 0.05:
                 self.lag = False
             else:
               self.lag = True
