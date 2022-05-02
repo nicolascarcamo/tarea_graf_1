@@ -177,6 +177,7 @@ class Birdie(object):
         self.puntaje = 0
         self.alive = True
         self.win = False
+        self.defeat = False
 
 
     def draw(self, pipeline):
@@ -215,29 +216,29 @@ class Birdie(object):
             return
         self.pos = 0
 
-    def collide(self, pipeline, pipes: 'PipeCreator'):
+    def collide(self, pipes: 'PipeCreator'):
         if not pipes.on:  # Si el jugador perdió, no detecta colisiones
             return
-
-
 
         deleted_pipes = []
         for e in pipes.pipes:
             if (-0.45 >= e.pos_x >= -0.9) and ((e.pos_y - 0.75) <= self.y <= (e.pos_y + 0.75) and self.alive):
                 pipes.die()  # Básicamente cambia el color del fondo, pero podría ser algo más elaborado, obviamente
                 self.alive = False
+                self.defeat = True
             elif self.y <= -0.75 and self.alive: #Choca contra el suelo
                 pipes.die()
                 self.alive = False
+                self.defeat = True
 
             elif e.pos_x < -1.1: #Logro pasar un obstaculo de manera exitosa
                 self.puntaje += 1
-                print('Puntuacion actual:' + str(self.puntaje))
                 deleted_pipes.append(e)
         pipes.delete(deleted_pipes)
 
-    def hasWon(self, victoryPoints): #Revisa si logro obtener el puntaje
+    def hasWon(self, victoryPoints, pipes): #Revisa si logro obtener el puntaje
         if int(victoryPoints) == self.puntaje:
+            pipes.die()
             self.win = True
             self.alive = False
     
@@ -331,8 +332,8 @@ class DefeatScreen(object):
 
         self.model = defeat_tr
 
-    def draw(self, pipeline, pipecreator):
-        if not(pipecreator.on):
+    def draw(self, pipeline, bird):
+        if bird.defeat:
             self.model.transform = tr.translate(-0.05, 0, 0)
             sg.drawSceneGraphNode(self.model, pipeline, "transform")
 

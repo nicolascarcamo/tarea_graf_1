@@ -87,8 +87,8 @@ if __name__ == '__main__':
         
 
         # Reconocer la logica
-        bird.collide(pipeline, pipes)  # ---> RECORRER TODOS LOS HUEVOS
-        bird.hasWon(victory)
+        bird.collide(pipes)  # ---> RECORRER TODOS LOS HUEVOS
+        bird.hasWon(victory, pipes)
 
         # DIBUJAR LOS MODELOS
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         bird.draw(pipeline)
         pipes.draw(pipeline)
         ground.draw(pipeline)
-        defeatscreen.draw(pipeline, pipes)
+        defeatscreen.draw(pipeline, bird)
         victoryscreen.draw(pipeline, bird)
 
 
