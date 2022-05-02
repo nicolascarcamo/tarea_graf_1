@@ -34,7 +34,7 @@ if __name__ == '__main__':
     glfw.set_key_callback(window, controlador.on_key)
 
     # Assembling the shader program (pipeline) with both shaders
-    pipeline = es.SimpleTransformShaderProgram()
+    pipeline = es.SimpleTextureTransformShaderProgram()
 
     # Telling OpenGL to use our shader program
     glUseProgram(pipeline.shaderProgram)
@@ -78,8 +78,7 @@ if __name__ == '__main__':
         bird.draw(pipeline)
         pipes.draw(pipeline)
         ground.draw(pipeline)
-        #print(str(bird.y))
-        
+
 
 
 

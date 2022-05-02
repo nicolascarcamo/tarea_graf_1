@@ -2,6 +2,9 @@ import grafica.transformations as tr
 import grafica.basic_shapes as bs
 import grafica.scene_graph as sg
 import grafica.easy_shaders as es
+import os.path
+from grafica.gpu_shape import GPUShape
+from OpenGL.GL import *
 
 from OpenGL.GL import glClearColor, GL_STATIC_DRAW
 import random
@@ -14,59 +17,66 @@ def create_gpu(shape, pipeline):
     gpu.fillBuffers(shape.vertices, shape.indices, GL_STATIC_DRAW)
     return gpu
 
+def create_gpu_bird(shape, pipeline):
+    gpu = es.GPUShape().initBuffers()
+    pipeline.setupVAO(gpu)
+    gpu.fillBuffers(shape.vertices, shape.indices, GL_STATIC_DRAW)
+    thisFilePath = os.path.abspath(__file__)
+    thisFolderPath = os.path.dirname(thisFilePath)
+    spritesDirectory = os.path.join(thisFolderPath, "Sprites")
+    spritePath = os.path.join(spritesDirectory, "pidgey_sprite.png")
+    gpu.texture = es.textureSimpleSetup(
+    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
+    return gpu
+
+def create_gpu_ground(shape, pipeline):
+    gpu = es.GPUShape().initBuffers()
+    pipeline.setupVAO(gpu)
+    gpu.fillBuffers(shape.vertices, shape.indices, GL_STATIC_DRAW)
+    thisFilePath = os.path.abspath(__file__)
+    thisFolderPath = os.path.dirname(thisFilePath)
+    spritesDirectory = os.path.join(thisFolderPath, "Sprites")
+    spritePath = os.path.join(spritesDirectory, "pidgey_sprite.png")
+    gpu.texture = es.textureSimpleSetup(
+    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
+    return gpu
+
+def create_gpu_pipe(shape, pipeline):
+    gpu = es.GPUShape().initBuffers()
+    pipeline.setupVAO(gpu)
+    gpu.fillBuffers(shape.vertices, shape.indices, GL_STATIC_DRAW)
+    thisFilePath = os.path.abspath(__file__)
+    thisFolderPath = os.path.dirname(thisFilePath)
+    spritesDirectory = os.path.join(thisFolderPath, "Sprites")
+    spritePath = os.path.join(spritesDirectory, "pipe_sprite.png")
+    gpu.texture = es.textureSimpleSetup(
+    spritePath, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST)
+    return gpu
 
 class Birdie(object):
 
     def __init__(self, pipeline):
         # Figuras básicas
-        gpu_body_quad = create_gpu(bs.createColorQuad(1, 0.8, 0.8), pipeline)  # rosado
-        gpu_leg_quad = create_gpu(bs.createColorQuad(1, 0.5, 1), pipeline)  # rosado fuerte
-        gpu_eye_quad = create_gpu(bs.createColorQuad(1, 1, 1), pipeline)  # blanco
+        gpu_body_quad = create_gpu_bird(bs.createTextureQuad(1, 1), pipeline)  # rosado
 
         body = sg.SceneGraphNode('body')
         body.transform = tr.uniformScale(1)
         body.childs += [gpu_body_quad]
 
-        # Creamos las piernas
-        leg = sg.SceneGraphNode('leg')  # pierna generica
-        leg.transform = tr.scale(0.25, 0.25, 1)
-        leg.childs += [gpu_leg_quad]
-
-        # Izquierda
-        leg_izq = sg.SceneGraphNode('legLeft')
-        leg_izq.transform = tr.translate(-0.5, -0.5, 0)  # tr.matmul([])..
-        leg_izq.childs += [leg]
-
-        leg_der = sg.SceneGraphNode('legRight')
-        leg_der.transform = tr.translate(0.5, -.5, 0)
-        leg_der.childs += [leg]
-
-        # Ojitos
-        eye = sg.SceneGraphNode('eye')
-        eye.transform = tr.scale(0.25, 0.25, 1)
-        eye.childs += [gpu_eye_quad]
-
-        eye_izq = sg.SceneGraphNode('eyeLeft')
-        eye_izq.transform = tr.translate(-0.3, 0.5, 0)
-        eye_izq.childs += [eye]
-
-        eye_der = sg.SceneGraphNode('eyeRight')
-        eye_der.transform = tr.translate(0.3, 0.5, 0)
-        eye_der.childs += [eye]
-
         # Ensamblamos el mono
         mono = sg.SceneGraphNode('bird')
         mono.transform = tr.matmul([tr.scale(0.2, 0.2, 0), tr.translate(-3.0, 0, 0)])
-        mono.childs += [body, leg_izq, leg_der, eye_izq, eye_der]
+        mono.childs += [body]
 
         transform_mono = sg.SceneGraphNode('birdTR')
         transform_mono.childs += [mono]
 
         self.model = transform_mono
-        self.pos = 0  # -1, 0, 1
-        self.y = 0  # Variable que indica la posicion visual de chansey (-0.7, 0.7)
+        self.pos = 0  
+        self.y = 0  # Variable que indica la posicion visual del pajaro
         self.puntaje = 0
         self.alive = True
+
 
     def draw(self, pipeline):
         sg.drawSceneGraphNode(self.model, pipeline, 'transform')
@@ -78,14 +88,7 @@ class Birdie(object):
         
 
     def update(self, dt):
-        """
-        Modifica x tal que satisfaga las constantes internas del modelo.
-        x-->f(dt,self.pos)
-        dt: incrementar/decrementar la variable (+sumo, -resto) *2dt, 3dt....
-        self.pos ---> -1 ---> x->0.7
-        self.pos ---> 0 ----> x =0
-        self.pos ---> 1---->x = 0.7
-        """
+
         gravity = 0.5
         dt *= 10
         if self.pos == 1 and self.y <= 0.85:
@@ -115,17 +118,19 @@ class Birdie(object):
         if not pipes.on:  # Si el jugador perdió, no detecta colisiones
             return
 
+
+
         deleted_pipes = []
         for e in pipes.pipes:
             if (-0.45 >= e.pos_x >= -0.9) and ((e.pos_y - 0.75) <= self.y <= (e.pos_y + 0.75)):
                 print('Juego terminado. Puntuacion final: ' + str(self.puntaje))
-                """
-                En este caso, podríamos hacer alguna pestaña de alerta al usuario,
-                cambiar el fondo por alguna textura, o algo así, en este caso lo que hicimos fue
-                cambiar el color del fondo de la app por uno rojo.
-                """
+
                 pipes.die()  # Básicamente cambia el color del fondo, pero podría ser algo más elaborado, obviamente
                 self.alive = False
+            elif self.y <= -0.75: #Choca contra el suelo
+                pipes.die()
+                self.alive = False
+
             elif e.pos_x < -1.1: #Logro pasar un obstaculo de manera exitosa
                 self.puntaje += 1
                 print('Puntuacion actual:' + str(self.puntaje))
@@ -140,11 +145,11 @@ class Birdie(object):
     def win(self):
         glClearColor(0, 1, 0, 1.0)  # Cambiamos a verde pq gano :D
 
-            
+      
 class Ground(object):
 
     def __init__(self, pipeline):
-        gpu_ground = create_gpu(bs.createColorQuad(0.4, 0.5, 0), pipeline)
+        gpu_ground = create_gpu_ground(bs.createTextureQuad(1, 1), pipeline)
 
         ground = sg.SceneGraphNode('ground')
         ground.transform = tr.scale(9999, 0.25, 1)
@@ -163,7 +168,7 @@ class Ground(object):
 class Pipe(object):
 
     def __init__(self, pipeline):
-        gpu_pipe = create_gpu(bs.createColorQuad(0.780, 0, 0.223), pipeline)
+        gpu_pipe = create_gpu_pipe(bs.createTextureQuad(1, 1), pipeline)
 
         pipe = sg.SceneGraphNode('pipe')
         pipe.transform = tr.scale(0.1, 0.75, 1)
