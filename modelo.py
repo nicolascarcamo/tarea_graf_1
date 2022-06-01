@@ -192,7 +192,7 @@ class Birdie(object):
 
     def update(self, dt):
 
-        gravity = 0.9
+        gravity = 1
         dt *= 10
         if self.pos == 1 and self.y <= 0.9:
             self.y += dt*1.2  # no lineal, cos(...)
@@ -317,7 +317,7 @@ class PipeCreator(object):
     def update(self, dt):
         for k in self.pipes:
 
-            if k.pos_x >= 0.05:
+            if k.pos_x >= 0:
                 self.lag = False
             else:
               self.lag = True
